@@ -1,0 +1,159 @@
+# TIML - Developers manual
+
+## Development environment
+
+The suggested IDE for developing TIML is PyCharm.
+
+Prepare your own Python (v3.6 or 3.7) environment and activate it.
+
+`pip install -r requirements.txt`
+
+If you want a fresh version with all up-to-date packages, consider teh following list, and update packages version accordingly.
+
+```bash
+pip install pytest==4.3.0
+pip install pandas==0.25.3
+pip install tensorflow==1.13.1
+pip install keras==2.2.4
+pip install pillow==5.4.1
+pip install matplotlib==3.0.3
+pip install Flask==1.0.2
+pip install requests==2.21.0
+
+# To be removed. Used only to convert a saliency map to heatmap.
+pip install opencv-python==4.1.1.26
+
+# To be removed. Use only by RISE to rescale an image
+pip install scikit-image==0.15.0
+```
+
+For plotting, you need to install the right back-end of matplot lib.
+On Ubuntu 18.04 we needed:
+
+```bash
+sudo apt-get install python3-tk
+```
+
+NOTE! In the shared requirements file we use tensorflow, CPU-only version.
+There are too many HW-related issues when trying to install the GPU version for everyone.
+If you want to use the GPU version of tensor flow, please install it on your local machine only, after fulfilling all machine specific requirements (drivers, ...).
+
+```bash
+pip install -r requirements
+pip uninstall tensorflow
+pip install tensorflow-gpu
+```
+
+## Configuration
+
+1. Make a copy of the config template: 
+
+       cp skincare_config_template.json skincare_config.json 
+
+2. Edit file `skincare_config.json` with your local needs (E.g. path to the huge ISIC images directory)
+
+## Code Organization
+
+```txt
+ISICTools/                      -- Scripts to extract meta-information from the ISIC dataset
+data/                           -- Dataframes (.csv) extracted from ISIC (and maybe other datasets in the future). ONLY text! No binaries in the git.
+Classifiers/                    -- The set of classifiers, one per module. This is a source root.
+    skincare_config_template.json       -- A template to fill-in any absolute paths and other local HW dependent settings.
+    skincare_config.json                -- Your local copy and edited version of the config. This file will **never** go on git.
+    skincare/                   -- root Python module
+        config.py               -- parse the configuration json file 
+        common/                 -- shared code, as for image manipulation, filtering, ...
+        classification/         -- classification of lesion type
+            vgg16/              -- Implementation using VGG16 and transfer learning
+            scratch/            -- Custom implementation, a variation of AlexNet
+        segmentation/           -- Image segmentation, implemented with UNET
+        features/               -- Features extraction (globules, streaks, ...) implemented with UNET
+        networking/             -- Flask based HTTP server implementing a REST API.
+```
+
+## Running modules
+
+All the command lines of this project are implemented as "executable module",
+meaning that some module directories have a `__main__.py` method which allows
+for command line invocation. E.g.:
+
+```bash
+cd TIML/
+# Now we are in the directory containing the `timl` package
+python -m timl.train
+Using TensorFlow backend.
+usage: __main__.py [-h] [--img-dir IMG_DIR] [--cuda-gpu CUDA_GPU]
+                   <input_table.csv>
+__main__.py: error: the following arguments are required: <input_table.csv>
+```
+ 
+
+## Packaging
+
+Use the setup tools to distribute the package:
+
+```bash
+cd Classifiers
+python setup.py sdist
+python setup.py bdist_wheel
+```
+
+And check the `dist` directory.
+
+```
+ls -l dist/
+-rw-r--r-- 1 fnunnari fnunnari 32217 Apr 18 12:07 skincare_dfki-0.0.1-py3-none-any.whl
+-rw-r--r-- 1 fnunnari fnunnari 21418 Apr 18 11:50 skincare-dfki-0.0.1.tar.gz
+```
+
+To install a package:
+
+```bash
+pip install -U ../GitLabSkinCare/Classifiers/dist/skincare_dfki-0.0.1-py3-none-any.whl
+```
+
+## Package resources
+
+TIML stores some binary resources under
+
+    timl.data
+
+The `data` folder must be a package (`__init.py__` is in it) and is packed into the distributable wheel.
+To acces the resources use the `pkg_resources` package. E.g., the `resource_listdir` and `resource_filename` methods. E.g.:
+
+    images = pkg_resources.resource_listdir("timl.data", "sample_images")
+  
+## Test units
+
+TIML uses [Pytest](https://docs.pytest.org/) for writing and running test units.
+
+Tests are packed per-module, under a test directory.
+
+To run all the tests, from the console:
+
+    cd TIML
+    pytest
+
+## Predicting using the network REST interface
+
+The http REST interface is implemented using Flask.
+To run the server from a terminal:
+
+```bash
+cd Classifiers
+export FLASK_APP=skincare.networking.__main__.py
+python -m flask run
+```
+
+By default, the server takes connections on port 5000.
+In order to support public connections and different ports:
+
+    python -m flask run --host=0.0.0.0 --port=80
+
+From a browser, you can use the server with:
+
+* `http://127.0.0.1:5000/test` a simple string answer test.
+* `http://127.0.0.1:5000/model_info` returns info about the loaded classifier.
+* `http://127.0.0.1:5000/classify/binary` performs the actual classification. This must be a POST, providing the image.
+
+See document [REST-API](Classifiers/REST-API.md) for the complete documentation.
