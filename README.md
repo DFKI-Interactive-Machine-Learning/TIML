@@ -2,7 +2,7 @@
 
 TIML is the Toolkit for Interactive Machine Learning.
 
-It provides a set of command line scripts and a web server to facilitate training an usage of Deep Convolutional Neural Networks for image classification and analysis through eXplainable Artificial Intelligence (XAI) techniques.
+It provides a set of command line tools and a web server to facilitate training an usage of Deep Convolutional Neural Networks for image classification and analysis through eXplainable Artificial Intelligence (XAI) techniques.
 
 This package features:
 
@@ -26,12 +26,27 @@ The framework is build on the top of Keras and TensofFlow libraries.
 
 Create a Python3 environment and install the package from the wheel archive
 
+### From source
+
+Install the needed libraries through the `pip` tool. Preferably, to avoid clashes, use a dedicated python environment.
+
 ```bash
-cd path/to/your_directory
+git clone https://github.com/DFKI-Interactive-Machine-Learning/TIML.git
+cd TIML
+python3 -m venv p3env-timl
+source p3env-timl/bin/activate
+
+pip install -r requirements.txt
+```
+
+### From a release
+
+```bash
+cd path/to/TIML
 python3 -m venv skincare-p3env
 source skincare-p3env/bin/activate
 
-pip install -U skincare_dfki-x.y.z-py3-none-any.whl
+pip install -U timl-x.y.z-py3-none-any.whl
 ```
 
 ## Files
@@ -62,14 +77,23 @@ You will see the following files:
   * `classifytouch.html` Tablet-friendly test page
   * ... and other support files
 
-## Running the server
+## Documentation
+
+Look into the `Docs` folder for dedicated docs:
+
+* A manual for [USERS](Docs/USERS), who want to learn how to use this toolkit.
+  * There is also a folder with Examples. E.g., [Example01](Examples/Example01/README).
+* A manual for [DEVELOPERS](Docs/Developers), who might want to extend this toolkit.
+* A list of calls available in the [REST-API](Docs/REST-API).
+
+## Running the Web server
 
 The http REST interface is implemented using Flask.
 To run the server from a terminal:
 
 ```bash
-cd path/to/your_directory
-export FLASK_APP=skincare.networking.__main__.py
+cd path/to/TIML
+export FLASK_APP=timl.networking.__main__.py
 python -m flask run
 ```
 
