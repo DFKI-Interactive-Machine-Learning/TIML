@@ -118,4 +118,4 @@ For example:
 * `http://127.0.0.1:5000/model_info` returns info about the loaded classifiers.
 * `http://127.0.0.1:5000/classify/binary` performs the actual classification. This must be a POST, providing the image.
 
-See the document [REST-API.md](REST-API.md) for more information on how to invoke the REST API.
+See the document [REST-API](Docs/REST-API.md) for more information on how to invoke the REST API.
