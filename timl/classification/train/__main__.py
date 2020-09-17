@@ -8,17 +8,14 @@ import argparse
 import shutil
 
 import pandas
-
 import tensorflow as tf
 
 from timl.classification.classifier import TrainResults
 from timl.classification.classifier_factory import make_classifier
-from ..common.datageneration import SkincareDataGenerator
-from ..common.plotting import generate_trainval_plot, generate_accval_plot, generate_ROC_plot
-from ..common.utils import format_array
+from timl.common.datageneration import SkincareDataGenerator
+from timl.common.plotting import generate_trainval_plot, generate_accval_plot, generate_ROC_plot
+from timl.common.utils import format_array
 from timl.classification.inspect.common import inspect_predictions
-
-from timl.networking.config import get_isic_base_path
 
 from typing import List
 from typing import Dict
@@ -38,11 +35,6 @@ DF_COLUMNS = DF_INPUT_COLUMNS + DF_OUTPUT_COLUMNS
 
 
 #
-# Config stuff
-DATASET_IMG_DIR = get_isic_base_path()
-
-
-#
 # Types for the train input configuration
 # Useful to force the type in case of empty cells or for names containing only digits.
 DATA_DFs_DTYPES = {
@@ -55,14 +47,13 @@ if __name__ == "__main__":
     args_parser = argparse.ArgumentParser(
         description='Automated training and testing of CNNs for multi-class prediction.')
 
-    args_parser.add_argument('input_table', metavar='<input_table.csv>', type=str,
-                             help="The CSV table with the input information.")
-    args_parser.add_argument('--img-dir', dest='img_dir', type=str,
-                             help='The directory path in which to look for the images.'
-                                  ' If omitted, uses the one specified in skincare_config.json')
+    args_parser.add_argument('--input-table', metavar='<input_table.csv>', type=str, required=True,
+                             help="The CSV table with the input train parameters.")
+    args_parser.add_argument('--img-dir', dest='img_dir', type=str, required=True,
+                             help='The directory path in which to look for the images.')
     args_parser.add_argument('--out-dir', dest='out_dir', type=str,
                              help='The directory path in which the models will be written.'
-                                  ' If omitted, creates one using the "skincare_train_output_yyyymmdd-hhmmss" template')
+                                  ' If omitted, creates one using the "train_output_yyyymmdd-hhmmss" template')
     args_parser.add_argument('--cuda-gpu', dest='cuda_gpu', type=int,
                              help='The CUDA GPU number to use for training')
     args_parser.add_argument('--skip-roc', action='store_true',
@@ -74,12 +65,9 @@ if __name__ == "__main__":
     if args.cuda_gpu is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_gpu)
 
-    # Overrides the default images dir
-    if args.img_dir is not None:
-        DATASET_IMG_DIR = args.img_dir
-
     #
     # Check for the dataset presence
+    DATASET_IMG_DIR = args.img_dir
     print("Looking for images in directory '{}'".format(DATASET_IMG_DIR))
     if not os.path.exists(DATASET_IMG_DIR):
         print("Image dataset dir '{}' doesn't exist".format(DATASET_IMG_DIR))
@@ -122,7 +110,7 @@ if __name__ == "__main__":
         # This is the timestamp
         now = datetime.datetime.now()
         timestamp_str = now.strftime("%Y%m%d-%H%M%S")
-        out_dirname = "skincare_train_output-{}".format(timestamp_str)
+        out_dirname = "train_output-{}".format(timestamp_str)
         print("Creating dir '{}'".format(out_dirname))
         os.mkdir(out_dirname)
     else:
@@ -550,14 +538,14 @@ if __name__ == "__main__":
         # Saving partial results
         row_df = pandas.DataFrame([out_dict], columns=DF_COLUMNS)
         row_df_filename = os.path.join(out_dirname, "{}-automation_result.csv".format(idx))
-        print("Saving row automation results to " + row_df_filename)
+        print("Saving row train results to " + row_df_filename)
         with open(row_df_filename, "w") as outfile:
             row_df.to_csv(outfile, index=False, header=True)
 
     #
     #
     out_df_filename = os.path.join(out_dirname, "automation_result.csv")
-    print("Saving final automation results to " + out_df_filename)
+    print("Saving final train results to " + out_df_filename)
 
     out_df = pandas.DataFrame(out_dicts, columns=DF_COLUMNS)
     # out_df.to_csv(sys.stdout, index=False, header=True)
