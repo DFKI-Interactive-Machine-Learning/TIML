@@ -1,43 +1,34 @@
 import os
+import sys
 import argparse
 
 import numpy as np
 import pandas
 
-from timl.networking.config import get_isic_base_path
 from timl.common.datageneration import SkincareDataGenerator
 from timl.classification.classifier import Classifier
 
 
-ISIC_DATASET_IMG_DIR = get_isic_base_path()
-
-
-#INFERENCE_INPUT = "images"  # "images", "images_and_metadata", "activations_and_metadata"
-
-
-# Example:
-# python -m timl.classification.predict --cuda-gpu=1 models/Model-ISIC2019-8cls-450px-20k/0-keras_model-20190803-075631.h5 models/Model-ISIC2019-8cls-450px-20k/0-automation_result.csv ../data/ISIC_Challenge_2019/ISIC_2019_Training_GroundTruth-nounk-20k-test.csv isic2019-fastprediciton.csv --img-dir=/mnt/XMG4THD/skincaredata/ISIC_Challenge_2019/ISIC_2019_Training_Input/
-
 args_parser = argparse.ArgumentParser(
     description='Automated training and testing of CNNs for multi-class prediction.')
 
-args_parser.add_argument('keras_model', metavar='<keras_model.h5>', type=str,
+args_parser.add_argument('--keras-model', metavar='<keras_model.h5>', type=str, required=True,
                          help="The keras model to use for testing.")
-args_parser.add_argument('config_table', metavar='<config_table.csv>', type=str,
+args_parser.add_argument('--config-table', metavar='<config_table.csv>', type=str, required=True,
                          help="The CSV table with the input used for training  (batch_size, imgfilter, colorfiler, classcolumns,...)")
-args_parser.add_argument('test_dataframe', metavar='<test_dataframe.csv>', type=str,
+args_parser.add_argument('--test-dataframe', metavar='<test_dataframe.csv>', type=str, required=True,
                          help="The CSV table with the list of images to test.")
-args_parser.add_argument('output_csv', metavar='<output.csv>', type=str,
+args_parser.add_argument('--img-dir', dest='img_dir', type=str, required=True,
+                         help='The directory path in which to look for the images.')
+args_parser.add_argument('--output-csv', metavar='<output.csv>', type=str, required=True,
                          help="The CSV table with the list of images to test.")
 args_parser.add_argument('--generate-numpy', action="store_true",
                          help='In addition to the output.csv, also binary numpy arrays will be saved.'
                               ' 1) One big numpy file output.npy, 2) a directory output/ containing one .npy array per sample.')
-args_parser.add_argument('--img-dir', dest='img_dir', type=str,
-                         help='The directory path in which to look for the images.'
-                              ' If omitted, uses the one specified in skincare_config.json')
 args_parser.add_argument('--cuda-gpu', dest='cuda_gpu', type=int,
-                         help='The CUDA GPU number to use for training')
+                         help='The CUDA GPU number to use for computing predictions')
 
+# TODO -- support also metadata and activations as input
 # args_parser.add_argument('--input-type', dest='input_type', type=str, default="images",
 #                          help='The input for this model, among: "images", "images_and_metadata", "activations_and_metadata"')
 # args_parser.add_argument('--metadata-csv', dest='metadata_csv', type=str,
@@ -45,52 +36,6 @@ args_parser.add_argument('--cuda-gpu', dest='cuda_gpu', type=int,
 # args_parser.add_argument('--feature-size', dest='feature_size', type=int,
 #                          help='The site of the input features vector')
 
-#
-# Candidate code to have different inputs and maybe use metadata
-#
-
-# if INFERENCE_INPUT == "images":
-#     # The inference generator must not augment images and must not shuffle
-#     inference_generator = DataGenerator(images_dir_path=ISIC_DATASET_IMG_DIR,
-#                                         df=inference_df,
-#                                         class_columns=columns,
-#                                         image_size=img_size,
-#                                         resize_filter=resize_filter,
-#                                         color_space=color_space,
-#                                         batch_size=batch_size,
-#                                         n_channels=3,
-#                                         shuffle=False,
-#                                         image_augmentation="none")
-#
-# elif INFERENCE_INPUT == "images_and_metadata":
-#     from timl.common.datageneration import MetaDataGenerator
-#
-#     inference_generator = MetaDataGenerator(
-#         images_dir_path=ISIC_DATASET_IMG_DIR,
-#         df=inference_df,
-#         meta_df=pandas.read_csv(args.metadata_csv),
-#         class_columns=columns,
-#         image_size=img_size,
-#         resize_filter=resize_filter,
-#         color_space=color_space,
-#         batch_size=batch_size,
-#         n_channels=3,
-#         shuffle=False,
-#         image_augmentation="none"
-#     )
-#
-# elif INFERENCE_INPUT == "activations_and_metadata":
-#     from timl.common.datageneration import ActivationsAndMetaDataGenerator
-#
-#     inference_generator = ActivationsAndMetaDataGenerator(
-#         df=inference_df,
-#         activations_dir_path=ISIC_DATASET_IMG_DIR,
-#         meta_df=pandas.read_csv(args.metadata_csv),
-#         class_columns=columns,
-#         batch_size=batch_size,
-#         augmentation=1,
-#         feature_size=args.feature_size,
-#         shuffle=False)
 
 # This possibly stops the execution if the arguments are not correct
 args = args_parser.parse_args()
@@ -98,13 +43,21 @@ args = args_parser.parse_args()
 if args.cuda_gpu is not None:
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.cuda_gpu)
 
-# Overrides the default images dir
-if args.img_dir is not None:
-    ISIC_DATASET_IMG_DIR = args.img_dir
+#
+# Check for the dataset presence
+DATASET_IMG_DIR = args.img_dir
+print("Looking for images in directory '{}'".format(DATASET_IMG_DIR))
+if not os.path.exists(DATASET_IMG_DIR):
+    print("Image dataset dir '{}' doesn't exist".format(DATASET_IMG_DIR))
+    sys.exit(10)
+
+if not os.path.isdir(DATASET_IMG_DIR):
+    print("Image dataset path '{}' is not a directory".format(DATASET_IMG_DIR))
+    sys.exit(10)
 
 model_filename = args.keras_model  # model full filename with path
 inference_set_filename = args.test_dataframe  # Name of the dataset
-config_table = args.config_table  # The filename for the table with the automation output
+config_table = args.config_table  # The filename for the table with the train output
 
 config_df = pandas.read_csv(config_table)
 
@@ -157,7 +110,7 @@ print("Classes: ", classes)
 # The inference generator must not augment images and must not shuffle
 inference_generator = SkincareDataGenerator(
     images_df=input_df,
-    images_dir=ISIC_DATASET_IMG_DIR,
+    images_dir=DATASET_IMG_DIR,
     image_size=img_size,
     resize_filter=resize_filter,
     color_space=color_space,
