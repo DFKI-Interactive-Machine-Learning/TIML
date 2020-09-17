@@ -81,10 +81,10 @@ You will see the following files:
 
 Look into the `Docs` folder for dedicated docs:
 
-* A manual for [USERS](Docs/USERS), who want to learn how to use this toolkit.
-  * There is also a folder with Examples. E.g., [Example01](Examples/Example01/README).
-* A manual for [DEVELOPERS](Docs/Developers), who might want to extend this toolkit.
-* A list of calls available in the [REST-API](Docs/REST-API).
+* A manual for [USERS](Docs/USERS.md), who want to learn how to use this toolkit.
+  * There is also a folder with Examples. E.g., [Example01](Examples/Example01/README.md).
+* A manual for [DEVELOPERS](Docs/Developers.md), who might want to extend this toolkit.
+* A list of calls available in the [REST-API](Docs/REST-API.md).
 
 ## Running the Web server
 
