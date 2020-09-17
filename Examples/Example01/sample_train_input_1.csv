@@ -1,0 +1,2 @@
+method,dataset,split,epochs,imgaug,batchsize,imgsize,resizefilter,colorspace,classcolumns,classweights,trainsize,augmult,malprop,trainstart,traintime,trainacc,trainmodel,valsize,valmalprop,valacc,valspec,valsens,testsize,testmalprop,testacc,testspec,testsens,testauc,exceptions,notes
+VGG16,../../timl/data/ISIC2019/ISIC_2019_Training_GroundTruth_meta,pre,5,hflip_rot4,32,227,nearest,RGB,MEL;NV;BCC;AK;BKL;DF;VASC;SCC,compute,,,,,,,,,,,,,,,,,,,,
