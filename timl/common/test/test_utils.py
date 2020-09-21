@@ -1,21 +1,20 @@
+import pytest
+
 import os
 
 from PIL.Image import Image
-import PIL.Image
 
-from .test_augmentation import TEST_IMG_NAMES
+from .test_augmentation import sample_images
 
 
-def test_jaccard_similarity_index():
+def test_jaccard_similarity_index(sample_images):
     from ..utils import jaccard_similarity
 
-    assert len(TEST_IMG_NAMES) >= 2
+    assert len(sample_images) >= 2
 
-    isic_path = get_isic_base_path()
-
-    # Load two different images
-    im1 = PIL.Image.open(os.path.join(isic_path, TEST_IMG_NAMES[0]))  # type: Image
-    im2 = PIL.Image.open(os.path.join(isic_path, TEST_IMG_NAMES[1]))  # type: Image
+    # Consider two different images
+    im1 = sample_images[0]  # type: Image
+    im2 = sample_images[1]  # type: Image
 
     # resulting index must lay between 0 and 1
     j1 = jaccard_similarity(im1, im2)
