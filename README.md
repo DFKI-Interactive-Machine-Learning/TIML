@@ -51,6 +51,8 @@ pip install -U timl-x.y.z-py3-none-any.whl
 
 ## Files
 
+IN PROGRESS...
+
 A TIML release is distributed as single archive file, e.g.: `TIML-release-x.y.z.zip`.
 
 Unpack the archive in an _empty_ directory.
@@ -60,18 +62,10 @@ You will see the following files:
   * This file.
 * `skincare_dfki-x.y.z-py3-none-any.whl`
   * The installable python package.
-* `models/` Directory with the binary trained models. E.g.:
-  * `0-keras_model-20190412-142934.h5` is the trained model for binary classification.
-  * `model-segment_weights.h5` is the model for the segmentation.
-  * ... and more
-* `skincare_config.json`
+* `server_config.json`
     * The configuration file for the server. You need to edit it only if you update the models.
-* `REST-API.md`
-    * Documentation for the REST API.
-* `sample_images/` Some images for testing purposes.
-    * `ISIC_0000000.jpeg`
-    * `ISIC_0000002.jpeg`
-    * ...
+* `Docs/`
+    * Project documentation.
 * `html/` Some web pages for testing purpose
   * `classify.html` Desktop-friendly test page
   * `classifytouch.html` Tablet-friendly test page

@@ -55,20 +55,21 @@ pip install tensorflow-gpu
 ## Code Organization
 
 ```txt
-ISICTools/                      -- Scripts to extract meta-information from the ISIC dataset
-data/                           -- Dataframes (.csv) extracted from ISIC (and maybe other datasets in the future). ONLY text! No binaries in the git.
-Classifiers/                    -- The set of classifiers, one per module. This is a source root.
-    skincare_config_template.json       -- A template to fill-in any absolute paths and other local HW dependent settings.
-    skincare_config.json                -- Your local copy and edited version of the config. This file will **never** go on git.
-    skincare/                   -- root Python module
-        config.py               -- parse the configuration json file 
-        common/                 -- shared code, as for image manipulation, filtering, ...
-        classification/         -- classification of lesion type
-            vgg16/              -- Implementation using VGG16 and transfer learning
-            scratch/            -- Custom implementation, a variation of AlexNet
-        segmentation/           -- Image segmentation, implemented with UNET
-        features/               -- Features extraction (globules, streaks, ...) implemented with UNET
-        networking/             -- Flask based HTTP server implementing a REST API.
+Docs                    -- Documentation
+Examples                -- Example of use of the TIML framework
+LICENSE                 -- The open source license
+README.md               -- This file
+Scripts/                -- Useful scripts to manage datasets, and more...
+html/                   -- Web pages for visual inspection
+requirements.txt        -- The requirements for the development Python environment
+setup.py                -- Installation script to create a wheel package of TIML
+timl/                   -- The main Python package
+    classification/     -- The classification tools (training, prediction and tests)
+    common/             -- Common, general purpose, utilities.
+    data/               -- Static data, embedded in the package, mainly for testing.
+    networking/         -- Web server code and REST-API.
+    xai/                -- eXplainable AI algorithms. E.g., Grad-CAM and RISE.
+vis/                    -- A dump of the _Keras Visualization Toolkit_ (<https://github.com/raghakot/keras-vis>), mainly needed for the GrtadCAM implementation.
 ```
 
 ## Running modules
