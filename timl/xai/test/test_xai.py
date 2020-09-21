@@ -1,37 +1,23 @@
 import pytest
 import os
 
-from keras.models import load_model
+from PIL.Image import Image
 
 from timl.classification.classifier import Classifier
 
-#
-# Data to use
-#SKINCARE_DATA_DIR = get_skincare_datadir()
-#MODEL_FILE = os.path.join(SKINCARE_DATA_DIR,
-#                          "ISIC_Challenge_2019/Models/Model-ISIC2019-8cls-VGG16flat-227px-20k/0-keras_model.h5")
-
-SAMPLE_IMAGE_PATH = "sample_images/ISIC_0000000.jpeg"
+# Fixtures from other tests
+from timl.common.test.test_augmentation import sample_image
 
 
-def test_xai_methods(tmp_path):
-    import PIL.Image
+def test_xai_methods(tmp_path, sample_image: Image):
 
-    # Load trained model
-    model = load_model(MODEL_FILE)
+    from timl.classification.classifier_factory import make_classifier
+    classifier = make_classifier(train_method="VGG16", image_size=227, n_classes=8)
 
-    # Initialize model
-    classifier = Classifier()
-    classifier._model = model
+    print("Generating XAI images in {}".format(tmp_path))
 
     # Retrieve the model input dimensions
     w, h, _ = classifier.get_input_size()
-
-    #
-    # Load sample image
-    image = PIL.Image.open(SAMPLE_IMAGE_PATH)
-
-    print("Generating XAI images in {}".format(tmp_path))
 
     for xai_method, extra_params in [
         ('gradcam', {'layer_name': 'block5_conv3'}),
@@ -40,7 +26,9 @@ def test_xai_methods(tmp_path):
 
         print("Generating XAI images for method {} with parameters {}".format(xai_method, extra_params))
 
-        grey_map, heat_map, composite = classifier.generate_heatmap(image=image, method=xai_method, **extra_params)
+        grey_map, heat_map, composite = classifier.generate_heatmap(image=sample_image,
+                                                                    method=xai_method,
+                                                                    **extra_params)
 
         assert grey_map.mode == 'L'
         assert heat_map.mode == 'RGB'
