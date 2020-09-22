@@ -16,6 +16,10 @@ From a development point of view, this package offers:
 
 * An Object-oriented software framework to easily add new CNN architectures without rewriting any of the data preparation, infer, and testing code.
 
+## Online examples
+
+The TIML toolkit has been used to realize the classification code of the [Skincare](https://medicalcps.dfki.de/?page_id=1056) project. Try it here <http://dfki.de/skincare/classify.html>.
+
 ## Requirements
 
 A system with Python 3.6 or 3.7 already installed.
@@ -43,8 +47,8 @@ pip install -r requirements.txt
 
 ```bash
 cd path/to/TIML
-python3 -m venv skincare-p3env
-source skincare-p3env/bin/activate
+python3 -m venv timl-p3env
+source timl-p3env/bin/activate
 
 pip install -U timl-x.y.z-py3-none-any.whl
 ```
@@ -60,7 +64,7 @@ You will see the following files:
 
 * `README.md`
   * This file.
-* `skincare_dfki-x.y.z-py3-none-any.whl`
+* `timl-x.y.z-py3-none-any.whl`
   * The installable python package.
 * `server_config.json`
     * The configuration file for the server. You need to edit it only if you update the models.
@@ -87,6 +91,7 @@ To run the server from a terminal:
 
 ```bash
 cd path/to/TIML
+source timl-p3env/bin/activate
 export FLASK_APP=timl.networking.__main__.py
 python -m flask run
 ```
