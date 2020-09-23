@@ -156,3 +156,115 @@ In this directory you will find:
   * Also in JSON format as `summary.json`
 * `per_image_results.csv` containing predictions and results for each image
 * a set of `ROC-xx-cls.png` image files, with the ROC plot.
+
+## Running the Web server
+
+The http REST interface is implemented using Flask.
+
+First, you need to create a file called `timl_server_config.json` in your home or working directory.
+If it doesn't exist, the server will stop suggesting a sample configuration, e.g.:
+
+```json
+{
+    "CLASSIFICATION_MODEL_description": "Path to the model file (.h5) for classification.",
+    "CLASSIFICATION_MODEL": "../Model-ISIC2019-8cls-VGG16flat-227px-20k/0-keras_model.h5",
+    "REST_API_URL_PREFIX_description": "The URL prefix to access the REST-API.",
+    "REST_API_URL_PREFIX": "rest",
+    "STATIC_PAGES_DIR_description": "Path to the directory containing the static files.",
+    "STATIC_PAGES_DIR": "html",
+    "STATIC_PAGES_URL_PREFIX_description": "The URL prefix to access the static pages.",
+    "STATIC_PAGES_URL_PREFIX": "web"
+}
+```
+
+To run the server from a terminal:
+
+```bash
+cd path/to/TIML
+source timl-p3env/bin/activate
+export FLASK_APP=timl.networking.__main__.py
+python -m flask run
+```
+
+By default, the server takes connections on port 5000.
+In order to specify a different port:
+
+    python -m flask run --host=0.0.0.0 --port=80
+
+Browse to the following addresses to check for life:
+
+      http://localhost:5000/
+      http://localhost:5000/rest/info
+      http://localhost:5000/web/classify.html
+
+### Using the REST-API
+
+When you have trained a model, you can make it available via the web REST-API
+
+See document [REST-API](Classifiers/REST-API.md) for the complete documentation.
+
+For example, for classification, follow this:
+
+```
+cd TIML/Scripts
+source ../../p3env-3.7/bin/activate
+python SendImage.py ISIC_0000003.jpeg http://localhost:5000/rest/classify
+Sending image /Users/fanu01-admin/Downloads/ISIC_0000003.jpeg to url http://localhost:5000/rest/classify
+Answer code: 200
+Got response status OK
+application/json
+{'confidence': [0.21843838691711426,
+                0.636655330657959,
+                -0.9998914153766236,
+                -0.9998995327187004,
+                -0.9866130789741874,
+                -0.9995066245901398,
+                -0.9997779080149485,
+                -0.9999668421623937],
+ 'filename': 'ISIC_0000003.jpeg',
+ 'prediction': [0.316133588552475,
+                0.6820734143257141,
+                1.357307792204665e-05,
+                1.2558410162455402e-05,
+                0.0016733651282265782,
+                6.167192623252049e-05,
+                2.776149813144002e-05,
+                4.1447297007835004e-06]}
+Done.
+```
+
+In this answer, the `prediction` entry contains the output of the last layer: a softmax probability distribution.
+The association between the index and the class name is depends on your training data.
+
+
+For testing the extraction of saliency and heatmaps, follow this:
+
+```
+python SendImage.py ISIC_0000003.jpeg http://localhost:5000/rest/explain/gradcam/block5_conv3
+Sending image ISIC_0000003.jpeg to url http://localhost:5000/rest/explain/gradcam/block5_conv3
+Answer code: 200
+Got response status OK
+application/json
+{'args': {'layer_name': 'block5_conv3'},
+ 'comp': 'iVBORw0KGg ... uQmCC',
+ 'grey': 'iVBORw0KGg ... QmCC',
+ 'heatmap': 'iVBORw0 ... 5CYII=',
+ 'layer': 'block5_conv3',
+ 'method': 'gradcam'}
+Done.
+```
+
+The `grey`, `heatmap` and `comp` contain the Base64 encoding of PNG images showing the greyscale saliency map, the colored heatmap, and a composition between the original image and the saliency map, respectively.
+
+Currently supported visual XAI methods are `gradcam` and `rise`.
+
+
+### Web interface
+
+IN PROGRES
+
+To test the system open one of the following links in a browser:
+
+* `http://127.0.0.1:5000/html/classify.html` Use the system through the desktop interface.
+* `http://127.0.0.1:5000/html/classifytouch.html` Use the system through the desktop interface.
+* `http://127.0.0.1:5000/html/evaluate.html` Evaluate classification results.

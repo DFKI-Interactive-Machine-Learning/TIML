@@ -28,8 +28,6 @@ The framework is build on the top of Keras and TensofFlow libraries.
 
 ## Installation
 
-Create a Python3 environment and install the package from the wheel archive
-
 ### From source
 
 Install the needed libraries through the `pip` tool. Preferably, to avoid clashes, use a dedicated python environment.
@@ -84,37 +82,15 @@ Look into the `Docs` folder for dedicated docs:
 * A manual for [DEVELOPERS](Docs/DEVELOPERS.md), who might want to extend this toolkit.
 * A list of calls available in the [REST-API](Docs/REST-API.md).
 
-## Running the Web server
-
-The http REST interface is implemented using Flask.
-To run the server from a terminal:
-
-```bash
-cd path/to/TIML
-source timl-p3env/bin/activate
-export FLASK_APP=timl.networking.__main__.py
-python -m flask run
-```
-
-By default, the server takes connections on port 5000.
-In order to specify a different port:
-
-    python -m flask run --host=0.0.0.0 --port=80
-
-
-To test the system open one of the following links in a browser:
-
-* `http://127.0.0.1:5000/html/classify.html` Use the system through the desktop interface.
-* `http://127.0.0.1:5000/html/classifytouch.html` Use the system through the desktop interface.
-* `http://127.0.0.1:5000/html/evaluate.html` Evaluate classification results.
-
 
 ## Working with the network REST interface
 
-The same port, TIML offers a REST API offering classification as remote service.
+TIML integrates a web-server that can be used to provide access to a REST-API or to load an explorative web inteface.
+
 For example:
 
-* `http://127.0.0.1:5000/model_info` returns info about the loaded classifiers.
-* `http://127.0.0.1:5000/classify/binary` performs the actual classification. This must be a POST, providing the image.
+* `http://127.0.0.1:5000/info` returns info about the loaded classifiers.
+   See the document [REST-API](Docs/REST-API.md) for more information on how to invoke the REST API.
 
-See the document [REST-API](Docs/REST-API.md) for more information on how to invoke the REST API.
+* `http://127.0.0.1:5000/classify.html` load an interactive page for exploring classification results.
+

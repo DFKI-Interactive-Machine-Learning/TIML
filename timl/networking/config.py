@@ -5,18 +5,15 @@ import sys
 from typing import Optional, Dict
 
 
-CONFIG_FILENAME = "server_config.json"
+CONFIG_FILENAME = "timl_server_config.json"
 
 # Triplets of (entry_name, description, default_value)
 config_template = [
-    ("SKINCARE_DATA_DIR", "Directory containing some binary data needed to test the Skincare project code", "path/to/skincaredata"),
-    ("ISIC_DATASET_IMG_DIR", "Directory containing the ISIC images (ISIC_0000000.jpeg, ...). Needed only for training.", "path/to/ISIC/Images/"),
-    ("IMAGE_CACHE_LIMIT", "The number of images to cache in an ImageProvider. Avoids reloading from disk. Should not be too high in order to avoid excessive memory allocation. Lower this if you see your memory filling too much. Se to 0 to disable image caching.", 0),
-    ("SERVER_CLASSIFICATION_MODEL", "Path to the model file (.h5) to load to perform the classification.", "0-keras_model-20190412-142934.h5"),
-    ("SERVER_ISIC2019_CLASSIFICATION_MODEL", "Path to the model file (.h5) to load to perform multi-class classification.", "0-keras_model.h5"),
-    ("SERVER_SEGMENTATION_WEIGHTS", "Path to the file (.h5) containing the weights for the segmentation model.", "segmentation_model-weigths.h5"),
-    ("SERVER_STATIC_PAGES_DIR", "Path to the directory containing the static files.", "html"),
-    ("SERVER_STATIC_PAGES_URL", "URL path to access the static pages.", "html")
+    ("CLASSIFICATION_MODEL", "Path to the model file (.h5) for classification.", "0-keras_model-xxx.h5"),
+#    ("SERVER_SEGMENTATION_MODEL", "Path to the model file (.h5) for for segmentation.", "segmentation_model.h5"),
+    ("REST_API_URL_PREFIX", "The URL prefix to access the REST-API.", "rest"),
+    ("STATIC_PAGES_DIR", "Path to the directory containing the static files.", "html"),
+    ("STATIC_PAGES_URL_PREFIX", "The URL prefix to access the static pages.", "web")
 ]
 
 
@@ -49,7 +46,7 @@ if config is None:
     print_example_config()
     sys.exit(10)
 
-print("Skincare configuration loaded.")
+print("Server configuration loaded.")
 
 #
 # Test keys presence
@@ -66,33 +63,20 @@ for k in config.keys():
             print("Unneeded key '{}' found in config. Consider removing it.".format(k))
 
 
-def get_image_cache_limit() -> int:
-    return int(config["IMAGE_CACHE_LIMIT"])
-
-
-def get_isic_base_path() -> str:
-    return config["ISIC_DATASET_IMG_DIR"]
-
-
 def get_server_classification_model_path() -> str:
-    return config["SERVER_CLASSIFICATION_MODEL"]
+    return config["CLASSIFICATION_MODEL"]
 
 
-def get_server_isic_2019_classification_model_path() -> str:
-    return config["SERVER_ISIC2019_CLASSIFICATION_MODEL"]
+# def get_segmentation_model_path() -> str:
+#    return config["SEGMENTATION_MODEL"]
 
-
-def get_segmentation_weights_path() -> str:
-    return config["SERVER_SEGMENTATION_WEIGHTS"]
+def get_server_rest_url_prefix() -> str:
+    return config["REST_API_URL_PREFIX"]
 
 
 def get_server_static_dir() -> str:
-    return config["SERVER_STATIC_PAGES_DIR"]
+    return config["STATIC_PAGES_DIR"]
 
 
-def get_server_static_url() -> str:
-    return config["SERVER_STATIC_PAGES_URL"]
-
-
-def get_skincare_datadir() -> str:
-    return config["SKINCARE_DATA_DIR"]
+def get_server_static_url_prefix() -> str:
+    return config["STATIC_PAGES_URL_PREFIX"]

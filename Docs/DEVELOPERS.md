@@ -41,16 +41,9 @@ If you want to use the GPU version of tensor flow, please install it on your loc
 ```bash
 pip install -r requirements
 pip uninstall tensorflow
-pip install tensorflow-gpu
+pip install tensorflow-gpu==x.y.z
 ```
 
-## Configuration
-
-1. Make a copy of the config template: 
-
-       cp skincare_config_template.json skincare_config.json 
-
-2. Edit file `skincare_config.json` with your local needs (E.g. path to the huge ISIC images directory)
 
 ## Code Organization
 
@@ -128,33 +121,17 @@ To acces the resources use the `pkg_resources` package. E.g., the `resource_list
 
 TIML uses [Pytest](https://docs.pytest.org/) for writing and running test units.
 
-Tests are packed per-module, under a test directory.
+Tests are packed per-module, under a test directory. E.g.:
+
+```
+timl/
+    classification/
+        test/
+            test_models.py
+            ...
+```
 
 To run all the tests, from the console:
 
     cd TIML
     pytest
-
-## Predicting using the network REST interface
-
-The http REST interface is implemented using Flask.
-To run the server from a terminal:
-
-```bash
-cd Classifiers
-export FLASK_APP=skincare.networking.__main__.py
-python -m flask run
-```
-
-By default, the server takes connections on port 5000.
-In order to support public connections and different ports:
-
-    python -m flask run --host=0.0.0.0 --port=80
-
-From a browser, you can use the server with:
-
-* `http://127.0.0.1:5000/test` a simple string answer test.
-* `http://127.0.0.1:5000/model_info` returns info about the loaded classifier.
-* `http://127.0.0.1:5000/classify/binary` performs the actual classification. This must be a POST, providing the image.
-
-See document [REST-API](Classifiers/REST-API.md) for the complete documentation.
