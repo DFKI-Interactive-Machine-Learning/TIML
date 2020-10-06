@@ -1,64 +1,52 @@
 # TIML - Users Manual
 
-## Training class prediction with automation
+## Training a class (or label) prediction model
 
 We implemented an automated training procedure.
+It takes as input a CSV file where each line is a model to be trained and columns are the training parameters. 
 
-1. Prepare an input CSV file. A sample is provided in file `data/automation_test_input_1.csv`. In this file, each row specifies a training model and several parameters.
+
+
+1. Prepare an input CSV file. A sample is provided in file `Examples/Example01/sample_train_input_1.csv`.
+   In this file, each row specifies a training model and the columns the training parameters.
 2. Execute the automation module providing the CSV input file.
-3. Wait
-4. The output will be another in a directory called `skincare_train_output-YYYYMMDD-hhmmss` containing:
-    * The overall `automation_result.csv` CSV file with the remaining columns filled with the computed data.
+   Check for syntax with `python -m timl.classification.train --help`.
+3. Wait...
+4. The output will be another in a directory called `train_output-YYYYMMDD-hhmmss` containing:
+    * The overall `automation_result.csv` CSV file. It copies the input CSV, plus the remaining columns filled with the training statistics data.
     * For each row in the input file, the trained model will be saved as `N-keras_model-YYMMDD-hhmmss.h5`, where N is the row number of the trained model.
-    * For each row the plots of loss function and ROC graphs.
-    * For each row the training results, saved for possibly later analysis of the loss evolution and re-plotting.
+    * For each row, the plots of loss function and ROC graphs.
+    * For each row, the training results, saved for possibly later analysis of the loss evolution and re-plotting.
 
 Example:
 
 ```bash
-cd Classifiers
+cd path/to/TIML
 # A short example, only one line.
-python -m skincare.automation ../data/automation_test_input_1.csv
-# A longer example, more lines and some augmentation. Might take a while.
-python -m skincare.automation ../data/automation_test_input_2.csv
-```
-
-Options can be passed to the automation command line:
-
-```txt
-$ python -m skincare.automation -h
-Searching for skincare_config.json
-Skincare configuration loaded.
-usage: __main__.py [-h] [--img-dir IMG_DIR] [--cuda-gpu CUDA_GPU] <input_table.csv>
-
-Automated training and testing of CNNs for multi-class prediction.
-
-positional arguments:
-  <input_table.csv>    The CSV table with the input information.
-
-optional arguments:
-  -h, --help           show this help message and exit
-  --img-dir IMG_DIR    The directory path in which to look for the images. If
-                       omitted, uses the one specified in skincare_config.json
-  --cuda-gpu CUDA_GPU  The CUDA GPU number to use for training
+python -m timl.classification.train --input-table=sample_train_input_1.csv --img-dir=../../timl/data/ISIC2019/images --out-dir=train_output
 ```
 
 
-### Automation input
+### Train input parameters
 
-The automation input CSV file must have a value for the following columns (the remaining columns will be filled by the code):
+Here the list of possible values for training input parameters:
 
-* `method` The configuration fo the training. It corresponds to a network plus a set of fixed hyper-parameters:
+* `method` The configuration for the training. It corresponds to a network plus a set of fixed hyper-parameters:
   * `VGG16` A VGG16 CNN keeping the weight of a training on imagenet (Transfer learning). The last two layers are set to 2048 and 2048 and initialized randomly. Uses SGD optimizer.
-  * `VGG16_Nadam` Same as before but uses NAdam optimizer.
-  * `VGG16_Adadelta` Same as before but uses AdaDelta optimizer.
-  * `SC19` Custom lightweight version derived from AlexNet. No Transfer.
+  * `VGG16-fc2k-ml` A VGG16 with 2X fully connected layers at 2048 nodes, for multi-label classification (sigmoid output)
+  * `RESNET50` A RESNET50 classification architecture.
+  * `RESNET50-fc4k-ml` A RESNET50 for multilabeling.
+  * `DenseNet169-fc4k-ml` A DenseNet169 for multilabeling.
+  
+  The full list can be found in the package `timl/classification/classifier_factory.py` in function `make_classifier`.
 
-* `dataset` The dataset used for training/velidation/testing (validation test is also known as _development_ set).
+* `dataset` The dataset used for training/validation/testing (validation test is also known as _development_ set).
+  This is a CSV file where the first column is called `image_name` and the remaining columns contain the ground truth.
+  An example is in `timl/data/ISIC2019/ISIC_2019_Training_GroundTruth_meta-train.csv`
 * `split` The strategy used to split the dataset in train/validation/test
   * `pre` Precomputed and stored on disk. We take the name specified in `dataset` (e.g. `ISIC-190213`) and look for files named `ISIC-190213-train.csv`, `ISIC-190213-dev.csv`, and `ISIC-190213-test.csv`.
   * `frac=<proportion:float>` A float number `frac > 0 and frac < 0.5`, indicating the proportion to sample. For a dataset of size 1000 elements, `frac=0.1` means that 100 elements will be extracted for dev and another 100 for test, leaving the train size at 800 samples.
-  * `n=<n_samples:int>` An integer number indicating how many samples to extract for velidation and for test. For a dataset of size 1000 elements, `n=100` means that 100 elements will be extracted for dev and another 100 for test, leaving the train size at 800 samples.
+  * `n=<n_samples:int>` An integer number indicating how many samples to extract for validation and for test. For a dataset of size 1000 elements, `n=100` means that 100 elements will be extracted for dev and another 100 for test, leaving the train size at 800 samples.
   * `list` The `dataset` is read as a semi-colon separated list of files. They can be either 2 (train/val) or 3 (train/val/test) files E.g.:, `data/train.csv;data/val.csv`.
 * `epochs` Number of epochs for training.
 * `imgaug` Image augmentation preset:
@@ -66,8 +54,10 @@ The automation input CSV file must have a value for the following columns (the r
   * `hflip` Each image is also flipped horizontally
   * `hflip_rot24` Each image is also flipped horizontally and rotated 24 times (15deg steps).
   * `hflip_rot4` Each image is also flipped horizontally and rotated 4 times (90deg steps). Avoids black corners.
+  
+  The full list of augmentation methods can be found in package `timl/common/imageaugmentation.py` in function `image_provider_factory`.
 * `batchsize` batchsize for training.
-* `imgsize` Images are rescaled to this resolution (square) before augmentation.
+* `imgsize` Images are rescaled to this resolution (square) before augmentation. E.g., `224` means 224x224 pixels.
 * `resizefilter` The filter used to resize the images. Can be:
   * `nearest`
   * `bilinear`
@@ -82,76 +72,101 @@ The automation input CSV file must have a value for the following columns (the r
 * `classcolumns`
   * `default` From the training dataset, all the columns except the first (`image_name`) will be used.
   * If a semi-column-separated list (e.g., `BEN;MAL`), this is the list of columns where each line is the one-hot vector representing the ground truth classification.
-  * If a single string (e.g., `ben_mal`) the name of a single column containing the classes as factors. The total number of classes will be automatically computed. Factors will se sorted alphabetically.
-* `classweights` The weight distribution of the classes, normally to compensate uneven counts in the training set.
+* `classweights` The weight distribution of the classes, normally to compensate unbalanced counts in the training set.
   * `default` All classes are left to the default 1.0 weight.
   * `compute` analyzes the dataset and automatically set the weight according to the frequency of appearance of the class in the dataset.
 
-## Predicting classes
+## Predicting classes/labels
 
-The `predict` module allows you to generate multiclass predictions
+The `timl.classification.predict` module allows you to generate multiclass predictions
 (the probability distribution, generally an output of the softmax layer)
 
+
+
 ```
-python -m skincare.classification.predict --help
-Using TensorFlow backend.
-Searching for skincare_config.json
-Skincare configuration loaded.
-usage: __main__.py [-h] [--img-dir IMG_DIR] [--cuda-gpu CUDA_GPU]
-                   <keras_model.h5> <config_table.csv> <test_dataframe.csv>
-                   <output.csv>
+python -m timl.classification.predict --help
+
+usage: __main__.py [-h] --keras-model <keras_model.h5> --config-table
+                   <config_table.csv> --test-dataframe <test_dataframe.csv>
+                   --img-dir IMG_DIR --output-csv <output.csv>
+                   [--generate-numpy] [--cuda-gpu CUDA_GPU]
+
+Given a list of images and a classification (or labeling) model, generates the
+predictions in CSV and optionally as binary numpy files.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --keras-model <keras_model.h5>
+                        The keras model to use for testing.
+  --config-table <config_table.csv>
+                        The CSV table with the input used for training
+                        (batch_size, imgfilter, colorfiler, classcolumns,...)
+  --test-dataframe <test_dataframe.csv>
+                        The CSV table with the list of images to test.
+  --img-dir IMG_DIR     The directory path in which to look for the images.
+  --output-csv <output.csv>
+                        The CSV table with the list of images to test.
+  --generate-numpy      In addition to the output.csv, also binary numpy
+                        arrays will be saved. 1) One big numpy file
+                        output.npy, 2) a directory output/ containing one .npy
+                        array per sample.
+  --cuda-gpu CUDA_GPU   The CUDA GPU number to use for computing predictions
 ```
 
 Example: 
 
-    python -m skincare.classification.predict models/Model-ISIC2019-8cls-450px-20k/0-keras_model-20190803-075631.h5 models/Model-ISIC2019-8cls-450px-20k/0-automation_result.csv ../data/ISIC_Challenge_2019/ISIC_2019_Training_GroundTruth-nounk-20k-test.csv isic2019-prediction.csv --img-dir=/mnt/XMG4THD/skincaredata/ISIC_Challenge_2019/ISIC_2019_Training_Input/
+    python -m timl.classification.predict --keras-model=.../0-keras_model.h5 --config-table=.../0-automation_result.csv --test-dataframe=timl/data/ISIC2019/ISIC_2019_Training_GroundTruth_meta-test.csv --img-dir=timl/data/ISIC2019/images --output-csv=predictions.csv --generate-numpy
 
 Will generate:
 
-* `prediction-train-20k.csv` containing the predictions (and inferred class) in text format.
-* `prediction-train-20k.npy` containing the prediction as numpy array
-* `prediction-train-20k/`    directory with the predictions, one file per image
-  * File format: `image_name-0000000000.npy`.
-  * Why? It is the same format used by the system caching the activation values. So that the output predictions can be read back from the same DataGenerator. This has been used when appending metadata to the final predictions to improve accuracy.
+* `predictions.csv` containing the predictions (and inferred class) in CSV text format.
+* `predictions.npy` containing the prediction as numpy array
+* `predictions/`    directory with the predictions, one file per image
+  * File format: `<image_name>-0000000000.npy`.
+  * Why? It is the same format used by the system caching the activation values. So that the output predictions can be read back from the same DataGenerator. This can be used to feed prediction vectors to other trainings without re-running the convolution stage.
 
 ## Testing class prediction
 
-Models can be tested on any dataset using the `inspect` submodule.
+Models can be tested on any dataset using the `timl.classification.inspect` module.
 
 Help is available:
 
 ```
-python -m skincare.classification.inspect --help
-usage: __main__.py [-h] [--overwrite] <test_dataframe.csv> <predictions.csv>
+python -m timl.classification.inspect --help
 
-Automated training and testing of CNNs for multi-class prediction.
+usage: __main__.py [-h] --test-csv <test_dataframe.csv> --predictions-csv
+                   <predictions.csv> [--out-dir OUT_DIR] [--overwrite]
 
-positional arguments:
-  <test_dataframe.csv>  The CSV table with the ground_truth. First column is
-                        the image_name, followed by the predicted classes.It
-                        will be used as dictionary: the image name is used to
-                        extract the ground truth of the images in the
-                        predictions.csv
-  <predictions.csv>     The CSV containing the predictions. First column is
-                        the image_name, followed by the predicted classes.It
-                        is the format generated by
-                        skincare.classification.predict.__main__
+Test predictions by comparing them with a ground truth.
 
 optional arguments:
   -h, --help            show this help message and exit
+  --test-csv <test_dataframe.csv>
+                        The CSV table with the ground_truth. First column is
+                        the image_name, followed by the predicted classes. It
+                        will be used as dictionary: the image name is used to
+                        extract the ground truth of the images in the
+                        predictions.csv
+  --predictions-csv <predictions.csv>
+                        The CSV containing the predictions. First column is
+                        the image_name, followed by the predicted classes. It
+                        is the format generated by
+                        timl.classification.predict.__main__
+  --out-dir OUT_DIR     Specifies the output directory. Creates it if not
+                        existing
   --overwrite           If true, overwrites data inside the destination
                         directory.
 ```
 
 Example:
 
-    python -m skincare.classification.inspect ../data/ISIC_Challenge_2019/ISIC_2019_Training_GroundTruth-nounk-20k-test.csv isic2019-prediction.csv
+    python -m timl.classification.inspect --test-csv=timl/data/ISIC2019/ISIC_2019_Training_GroundTruth_meta-test.csv --predictions-csv=predictions.csv --overwrite --out-dir=inspection
 
-It will create a directory by concatenating the name of the test set and the name of the model, like:
+If the output dir is not specified, it would create a directory by concatenating the name of the test set and the name of the model, like:
 
-    inspect_ISIC_2019_Training_GroundTruth-nounk-20k-test-isic2019-prediction/
+    inspect_ISIC_2019_Training_GroundTruth_meta-test-predictions/
 
-In this directory you will find:
+In the output directory you will find:
 * `summary.csv` containing all the metrics of the test
   * Also in JSON format as `summary.json`
 * `per_image_results.csv` containing predictions and results for each image

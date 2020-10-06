@@ -10,7 +10,8 @@ from timl.classification.classifier import Classifier
 
 
 args_parser = argparse.ArgumentParser(
-    description='Automated training and testing of CNNs for multi-class prediction.')
+    description='Given a list of images and a classification (or labeling) model,'
+                ' generates the predictions in CSV and optionally as binary numpy files.')
 
 args_parser.add_argument('--keras-model', metavar='<keras_model.h5>', type=str, required=True,
                          help="The keras model to use for testing.")
