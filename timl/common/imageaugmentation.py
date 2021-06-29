@@ -62,11 +62,12 @@ class MultipleImageProvider(ImageProvider):
 
     def __init__(self, image_paths: List[str], size: Optional[Tuple[int, int]], resample_filter: Optional[int], color_space: Optional[str]):
         """
+        This is the concrete provider implementation loading images from disk.
 
-        :param image_paths:
-        :param size: Optionally, them image can be resized just after loading.
-        :param resample_filter: a PIL filter. See https://pillow.readthedocs.io/en/5.1.x/handbook/concepts.html#concept-filters
-        :param color_space: Optionally, an image color space/mode can be changed just after resizing. See: <https://pillow.readthedocs.io/en/5.1.x/handbook/concepts.html#concept-modes>
+        :param image_paths: A list of path to images. Example: ["ISIC_0000000.jpeg", "ISIC_0000000.jpeg"].
+        :param size: Optionally, the image can be resized just after loading. Example: (224,224)
+        :param resample_filter: Optionally, a PIL filter. Example: PIL.Image.BILINEAR. See <https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-filters>
+        :param color_space: Optionally, an image color space/mode can be changed just after resizing. Example: "RGB". See: <https://pillow.readthedocs.io/en/stable/handbook/concepts.html#concept-modes>
         """
         self._image_paths = image_paths
         self._size = size
