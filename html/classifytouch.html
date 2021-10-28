@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+<script src= "https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.js"></script>
+<link rel="stylesheet" href="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.css" />
+
+<script src="classifytouch.js" type="text/javascript" ></script>
+<script src="service-config.js" type="text/javascript" ></script>
+<script src="modelresults.js" type="text/javascript" ></script>
+<link href="classify.css" rel="stylesheet">
+<link href="modal.css" rel="stylesheet">
+
+
+<title>SCIN - SkinCare Image Analysis</title>
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl"  ng-style="bodyStyle" >
+	
+<div style="margin: 10pt;" keyispressed ng-model="keyIsDown">
+
+	<div style="float:left;">
+	  <h2>SCIN - SkinCare Image Analysis</h2>
+	</div>
+
+
+	<div style="margin-left:20pt; float:right;">
+		<button ng-show="!testWithSamples"  style="color:green"
+				ng-click="showSample();"
+					title="show sample evaluation">show sample</button>
+		<button ng-show="testWithSamples" style="color:red; font-size:14pt;"
+				title="Reset before using own images"
+				ng-click="testWithSamples = false">RESET</button>
+
+		<button ng-if=false ng-click="showSample()" style="margin-left:20pt; " ng-show="!testWithSamples">show sample</button>
+
+		<button ng-click="showhelp = true" style="margin-left:20pt; " ng-show="!showhelp">Help</button>
+		<button ng-click="showhelp = false" style="margin-left:20pt; " ng-show="showhelp">Hide</button>
+	</div>
+	
+	
+	<div style="float:right; border:1pt solid blue; padding: 5pt; margin-left:20pt; color:blue; width:400pt;"
+		 ng-show="showhelp">
+		<span style="font-weight:bold">Classification</span><p>
+			After choosing an image the binary classification can be started by clicking the button
+			<span class="buttonlike" >Classify</span>.<p>
+			<span class="buttonlike" >DL Features</span> will compute and show a row of masks
+			computed through a UNET deep learning convolutional neural network.<p>
+			<span class="buttonlike" >ABCD Features</span> will start another module to compute the 'ABCD' features
+			for asymmetry, border, color and diameter.<p>
+			Large versions of images are shown when the mouse is moved over the thumbnails.
+			For most images the original image will be displayed in the background.
+			The opacity can be controlled alternatively by arrow keys after the slider is clicked (and turns red).
+			<p>
+			Use this <a href="/skin/evaluate.html" style="color:darkblue;">page to evaluate</a>  the binary classifier.
+			<p>
+			By clicking on <span class="buttonlike" style="color:green">show sample</span>
+			 (top of page) you can see the full functionality applied to example images.
+			Before using own images please click <span class="buttonlike" style="color:red">RESET</span> first.
+			<p>For further information please visit the <a href="http://iml.dfki.de/" style="color:blue;">IML homepage</a>.<p>
+		<span style="color:black;">DFKI - German Research Center for Artificial Intelligence.</span>
+		<div ng-if="false">ABCD Rule:
+		<ul>
+			<li>Asymmetry (one half of the mole doesn't match the other),
+			<li>Border irregularity,
+			<li>Color that is not uniform,
+			<li>Diameter greater than 6 mm (about the size of a pencil eraser)
+		</ul></div>
+	</div>
+
+
+
+	<div style="clear:left; float: left; margin-right: 10pt; margin-bottom: 10pt;">
+
+		<div>Model: {{modelInfo.binary_classification_model}}</div><p></p>
+
+			<table>
+				<tr>
+					<td style="vertical-align: top">
+						<div>
+							<table class="nobd list">
+								<tr ng-if=false>
+									<th style="width: 100pt">Image
+									<th style="text-align:left;">
+									  <table style="width:650pt;">
+									   <tr >
+									    <td style="text-align:left; width:100pt;">Classification
+										<td style="text-align:center; width:100%;">Features
+									   </table>
+									   </th>
+								</tr>   
+									   
+
+								<tr class="list" ng-repeat="uploadedFile in getImageList() track by $index" style="vertical-align:top;"
+									ng-mouseleave="uploadedFile.abcd.largeimage=''">
+
+								    <td style="padding-top:10pt; padding-left:5pt;text-align:center;">
+										<img ng-mouseover="uploadedFile.abcd.largeimage=uploadedFile.url"
+											 title="original image" ng-style="StyleOrigImage"
+											 ng-src="{{uploadedFile.url}}" alt="image" class="sm"><p>
+										{{uploadedFile.name}}
+										<p>
+										<table style="width:150pt; border-collapse:collapse;" cellpadding="5pt" class="frame"
+											   ng-show="uploadedFile.predict2">
+											<tr style="border-bottom:1pt solid gray;  vertical-align: top;">
+												<td style="text-align:left" colspan="2">
+													{{modelInfo.binary_classification_classes_description[0]}}/{{modelInfo.binary_classification_classes_description[1]}}
+												<img style="height:10pt; vertical-align:center;" ng-show="uploadedFile.class.gifcompute"
+														ng-src="{{uploadedFile.class.gifcompute}}">
+											<tr  style="border-bottom:1pt solid lightgray;  vertical-align: top;"
+												 ng-repeat="c in uploadedFile.predict2 | orderBy:'-conf' | filter:Filter_isPositive('conf')">
+												 <td style="text-align:left" title="{{c.desc}}"><b>{{c.desc}}</b>
+												 <td style="text-align:right" >{{c.conf*100 | number:1}}%
+													<br><span style="font-size:8pt;">(p={{c.pred | number:2}})</span>
+										</table>
+										<p>
+
+										<table style="width:150pt; border-collapse:collapse;" cellpadding="5pt" class="frame"
+											   ng-show="uploadedFile.predict8">
+											<tr style="border-bottom:1pt solid gray;  vertical-align: top;">
+												<td style="text-align:left" colspan="2">
+													Classes
+												<img style="height:10pt; vertical-align:center;" ng-show="uploadedFile.class.gifcompute"
+													 ng-src="{{uploadedFile.class.gifcompute}}">
+											<tr style="border-bottom:1pt solid lightgray;  vertical-align: top;"
+												ng-repeat="c in uploadedFile.predict8 | orderBy:'-conf' | filter:Filter_isPositive('conf')">
+											 <td style="text-align:left;" title="{{c.desc}}"><b>{{c.desc.substring(0,30)}}</b>
+											 <td style="text-align:right" >{{c.conf*100 | number:1}}%
+												<br><span style="font-size:8pt;">(p={{c.pred | number:2}})</span>
+										</table>
+
+										<button ng-click="clearImages()" style="margin-top:20pt; padding:10pt;">Reset</button>
+
+								    <td>
+							  		 <table class="inner" >
+									  <tr style="vertical-align:top; ">
+									   <td style="width:120pt; text-align:middle">
+										<button class="touchbutton" 
+												ng-click="analyzeImage(uploadedFile)" 
+												title="compute feature based on deep learning network">
+												Analyze</button>
+											<img style="height:16pt; vertical-align:bottom;" ng-show="uploadedFile.giffeaturesrunning"
+													 ng-src="{{uploadedFile.giffeaturesrunning}}"><br>
+										
+									  <div ng-show="uploadedFile.featureImages['segmentation']"  style="border: 1pt solid darkgray; padding:2pt;">
+									   <div ng-show="uploadedFile.featureImages['segmentation']" style="margin-top:5pt;">
+									    <input type="checkbox" id="hoverOn" ng-model="hoverOn" ng-change="toggleHoverOn()" />
+										<label for="hoverOn" style="font-size:10pt;">show original image in background</label>
+									   </div>
+									   <div style="text-align:center; padding-top:10pt;font-size:10pt; ">
+										 <div ng-show="hoverOn">
+										   Opacity:
+										   <rzslider style="width:100pt;"
+												   rz-slider-model="opaSlider.value" rz-slider-options="opaSlider.options" ></rzslider>		
+										<div style="height:25pt;">
+										 <img src="minus.png" style="float:left; vertical-align:midlle; margin-left:25pt; margin-right:20pt; width:20pt; height:20pt;" ng-click="incOpaSlider(-1)"> 								 
+										 <img src="plus.png" style="float:left; vertical-align:midlle; background-color:#0db9f0; width:20pt; height:20pt; font-size:20pt;" ng-click="incOpaSlider(+1)">
+										 </div>
+									 	</div>
+									   </div>
+									  </div>
+									  
+									  <div style="margin-top:10pt; font-size:10pt; " ng-show="uploadedFile.abcd.predictvalues['B']">
+
+									 	  <div class="feature" style="margin-bottom:3pt;" xtitle="(perimeter ** 2) / (4 * pi * area)">
+											  <div class="title">Border</div>
+											  <div class="bar" ng-style="uploadedFile.abcd.borderStyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.borderPlus}} {{uploadedFile.abcd.borderVal | number:0}}</div>
+										  </div>
+
+										  <div class="feature" title="Diameters">
+											  <div class="title">Dia 1 </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.dia1StyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.dia1Plus}} {{uploadedFile.abcd.dia1Val | number:1}}</div>
+										  </div>
+										  <div class="feature"  title="Diameters" style="margin-bottom:3pt;" >
+											  <div class="title">Dia 2 </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.dia2StyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.dia2Plus}} {{uploadedFile.abcd.dia2Val | number:1}}</div>
+										  </div>
+
+										  <div class="feature" title="Asymmetry horizontal">
+											  <div class="title">Asym H </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.aSymHStyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.asymHPlus}} {{uploadedFile.abcd.asymHVal | number:1}}</div>
+										  </div>
+										  <div class="feature" title="Asymmetry vertical">
+											  <div class="title">Asym V </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.aSymVStyleW">&nbsp;</div>
+										      <div class="value">{{uploadedFile.abcd.asymVPlus}} {{uploadedFile.abcd.asymVVal | number:1}}</div>
+										  </div>
+										 </div>
+
+								
+
+										<td colspan="1" ng-show="uploadedFile.featureImages['segmentation']">
+										<!-- Slideshow container -->
+										<div class="slideshow-container" id="slideshow-container" style="width:350pt;">
+										
+											<img ng-show="hoverOn"
+												 ng-src="{{uploadedFile.url}}" 
+												 ng-style="hoverStyle"
+												 style="width:350pt; position:absolute; z-index:3; opacity:0.8; top:0pt; left:0pt; -webkit-transition: all 1s ease; -moz-transition: all 1s ease; transition: all 1s ease;">
+										
+										
+										  <!-- Full-width images with number and caption text -->
+										  <div class="mySlides fade" 
+										  		ng-repeat="f in allFeatureImages">
+										  	<img class="dlimg" ng-src="{{uploadedFile.featureImages[f[0]]}}" >
+										    <div class="numbertext">{{f[1]}}</div>
+										  </div>
+										  
+										  <!-- Canvas to draw on -->
+										  <canvas id="canvas" ng-show="feedbackActive" width="466px" height="350px"
+										  			style="position:absolute; top:0pt; left:0pt;
+										  					background:lightyellow; z-index:5; opacity:0.3;
+										  					border:solid black 1px;">
+  													Your browser does not support canvas element.
+										  </canvas>
+										
+										  <!-- Next and previous buttons -->
+										  <a class="prev" ng-click="plusSlides(-1)">&#10094;</a>
+										  <a class="next" ng-click="plusSlides(1)">&#10095;</a>
+										</div>
+										<br>
+										
+										<div style="text-align:center">
+										<!-- The dots/circles -->  
+										  <span ng-repeat="f in allFeatureImages track by $index"  
+										  		class="dot" ng-click="currentSlide($index+1)"></span>
+										  
+										</div>
+												
+										<!--  feedback  -->		
+										<button ng-click="toggleFeedback()" ng-style="toggleFeedbackStyle">Feedback</button>
+										<span ng-show="feedbackActive">mark regions of interest</span>
+										<div>
+											<div style="font-size:10pt;" ng-repeat="d in feedbacks">{{d.feature[1]}} {{d.id}}:
+											<select ng-model="d.remark">
+												<option value="">- ignore -</option> 
+			       								<option ng-repeat= "rem in feedbackRemarks" >{{rem}}</option>  
+			      							</select></div>
+			      							<button ng-show="feedbacks.length > 0" ng-click="sendFeedbacks()">send</button>
+										</div>
+										<p>
+
+										<div>
+										  Explain
+										  <button ng-click="explainResultsDefaults(uploadedFile, 'gradcam')" title="gradcam">Method 1</button>
+										  <button ng-click="explainResultsDefaults(uploadedFile, 'rise')" title="rise, 10 masks">Method 2 (ca.40sec)</button>
+										  <button ng-click="uploadedFile.showExplanation = true">More Details</button>
+											<img style="height:16pt; vertical-align:bottom;"
+												ng-show="uploadedFile.explainrunning"
+												ng-src="{{uploadedFile.explainrunning}}">
+										  <div ng-show="uploadedFile.explanationdef.error">
+											  Error: {{uploadedFile.explanationdef.error}}</div>
+
+										  <div ng-show="uploadedFile.explanationdef.rise" style="clear:left; margin-top:3pt; padding:3pt; text-align:center;
+													width:280pt; height:165pt; background:#f2f2f2; ">
+											 <div style="margin-bottom:4pt;">RISE</div>
+											  <div class="layer"  ng-repeat="layer in uploadedFile.explanationdef.rise.layers"
+												 style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+												<img ng-src="{{layer.src}}" class="midi" style="width:130pt;"><br>
+												<span style="font-size:10pt;">{{layer.name}} </span>
+											</div>
+										</div>
+										 <div ng-show="uploadedFile.explanationdef.gradcam" style="clear:left; margin-top:3pt; padding:3pt; text-align:center;
+													width:280pt; height:165pt; background:#f2f2f2; ">
+											 <div style="margin-bottom:4pt;">gradCAM</div>
+											  <div class="layer"  ng-repeat="layer in uploadedFile.explanationdef.gradcam.layers"
+												 style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+												<img ng-src="{{layer.src}}" class="midi" style="width:130pt;"><br>
+												<span style="font-size:10pt;">{{layer.name}} </span>
+											</div>
+										</div>
+
+
+										<!-- modal pane for explanations -->
+										 <div ng-show="uploadedFile.showExplanation" class="modal" title="" style="cursor:auto; z-index:100; background-color: rgba(0,0,0, 0.7);"
+												 ng-init="uploadedFile.risemasks = risemasks; uploadedFile.visual = 'gradcam'; uploadedFile.layers = 2">
+											 <div class="modal-content"  style="margin:auto; cursor:auto; clear:left; padding:8pt 10pt; text-align:center;
+																max-width:60%; xheight:90%; overflow:auto;  " ng-style="uploadedFile.modalpanestyle">
+												<div style="font-size:10pt; margin-bottom:5pt; background-color:lightgrey; padding:5pt;">
+												 Method:
+												 <select ng-model="uploadedFile.visual" >
+													<option value="gradcam">gradcam</option>
+													 <option label="rise">rise</option>
+												 </select>
+												 <span ng-show="uploadedFile.visual == 'rise'">Masks: <input ng-model="uploadedFile.risemasks"  type="number" min="1" max="500" /></span>
+												 <span ng-show="uploadedFile.visual == 'gradcam'">Layers: <input ng-model="uploadedFile.layers"  type="number" min="1" max="4" /></span>
+												 <button ng-disabled="!uploadedFile.visual" ng-click="uploadedFile.explanation={};explainResults(uploadedFile)">start</button>
+												 <button ng-click="uploadedFile.showExplanation = false" style="margin-left:10pt;" >close</button>
+												</div>
+
+												 <table>
+												  <tr>
+												   <td >
+													   <div class="layer" style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+													  <img ng-src="{{uploadedFile.url}}"  id="{{'layerorig'+uploadedFile.name}}" class="maxi" style="max-width:400px"><br>
+													  <span style="font-size:10pt;">original</span>
+
+												  <tr>
+													<td ng-show="uploadedFile.explanation.error">
+														Error: {{uploadedFile.explanation.error}}
+													</td>
+
+												   <td ng-show="uploadedFile.explanation.layers.length > 0">
+													 <div class="layer"
+													   style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+													  <img ng-src="{{uploadedFile.explanation.layers[0].src}}" class="maxi" ng-style="uploadedFile.explanation.layers[0].style"><br>
+													  <span style="font-size:10pt;">{{uploadedFile.explanation.layers[0].name}} </span>
+													 </div>
+
+													<td ng-show="uploadedFile.explanation.layers.length > 1">
+													  <div class="layer"
+														style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+													  <img ng-src="{{uploadedFile.explanation.layers[1].src}}" class="maxi" ng-style="uploadedFile.explanation.layers[1].style"><br>
+													  <span style="font-size:10pt;">{{uploadedFile.explanation.layers[1].name}} </span>
+													  </div>
+													<td ng-show="uploadedFile.explanation.layers.length > 2">
+													  <div class="layer"
+														style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+													  <img ng-src="{{uploadedFile.explanation.layers[2].src}}" class="maxi" ng-style="uploadedFile.explanation.layers[2].style"><br>
+													  <span style="font-size:10pt;">{{uploadedFile.explanation.layers[2].name}} </span>
+													  </div>
+													<td ng-show="uploadedFile.explanation.layers.length > 3">
+													  <div class="layer"
+														style="margin-right: 3pt; margin-left: 3pt;  float:left;">
+													  <img ng-src="{{uploadedFile.explanation.layers[3].src}}" class="maxi" ng-style="uploadedFile.explanation.layers[3].style"><br>
+													  <span style="font-size:10pt;">{{uploadedFile.explanation.layers[3].name}} </span>
+													  </div>
+
+												 </table>
+
+												 <img ng-show="uploadedFile.explainrunning" ng-src="{{uploadedFile.explainrunning}}" style="margin-top:150pt;">
+
+											 </div>
+										 </div> <!-- end modal for explanations -->
+										</div> <!-- end explain -->
+
+																	   
+										<!-- thumbnails on the right -->
+										<td >
+										<div ng-show="uploadedFile.featureImages['segmentation']" style="cursor:pointer;">
+											<div class="ftag" ng-repeat="f in allFeatureImages track by $index" 
+												 ng-click="currentSlide($index+1)"
+												 id="{{$index}}">
+												<img ng-src="{{uploadedFile.featureImages[f[0]]}}" 
+													 style="width:30pt; border:1pt solid gray; vertical-align:middle">
+												<span style="vertical-align:middle">{{f[1]}}</span>
+											</div>
+									    </div>
+									    &nbsp;</td>
+									
+								<tr><td colspan="3" ng-show="uploadedFile.errormessage"	 >
+										 <div style="margin: 5pt; padding: 3pt; border:1pt solid black; color:red;"	>Error: {{uploadedFile.name}}: <br>{{uploadedFile.errormessage}}</div>
+								<tr><td colspan="3" >&nbsp;
+								</table>
+
+
+							<tr ng-show="getImageList().length == 0" class="list"  style="height:150pt; "
+								title="Click to load image(s) from your file system or Drag&Drop image(s) to this field">
+								<td style="padding:20pt 20pt 20pt 100pt; "  colspan="3">
+								<input type="file" class="inputfile" id="imginput" accept="image/*" ng-file-model="myFiles" multiple/>
+								<label for="imginput" style="padding:20pt 5pt; margin:10pt; text-align:center;"
+								   upload  ng-file-model="myFiles" multiple="true">click to choose image(s) or drop image file(s) here
+								</label>
+
+						</table>
+					  </div>
+
+
+				
+			</table>
+
+		</div>
+
+
+
+
+	
+</body>
+</html>

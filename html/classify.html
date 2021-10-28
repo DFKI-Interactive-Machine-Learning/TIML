@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+<script src= "https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.js"></script>
+<link rel="stylesheet" href="https://rawgit.com/rzajac/angularjs-slider/master/dist/rzslider.css" />
+
+<script src="classify.js" type="text/javascript" ></script>
+<script src="service-config.js" type="text/javascript" ></script>
+<script src="modelresults.js" type="text/javascript" ></script>
+
+<style>
+.crosshair {cursor: crosshair;}
+body {
+	font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+table {
+  border-collapse: collapse;
+}
+table, td, th {
+  padding: 3pt;
+}
+table {
+  xxborder-top: 1px solid black;
+}
+table.nobd {
+	border: 0pt solid white;
+}
+table.frame {
+	border: 1pt solid gray;
+}
+tr.list {
+	min-height: 60pt;
+}
+table.list tr.list:nth-child(even) {
+	background-color: #f5f5f5;
+}
+table.list tr.list:hover {
+	background-color: #e2e2e2;
+}
+table.inner {
+	width: 700pt;
+	border-style: ridge;
+	border-color: lightgray;
+}
+
+.asset-upload {
+	border: 1pt solid red;
+	height: 30pt;
+	width: 100pt;
+	text-align: center;
+	border-radius: 6px;
+	background-color: #eaeaea;
+	margin-top: 5pt;
+	padding: 5pt 5pt;
+}
+.inputfile {
+	color:green;
+	border:1pt solid red;
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+.inputfile + label {
+	padding:10pt 5pt;
+	color: red;
+	border-color: blue;
+    border-radius: 4px;
+    text-align: center;
+   	box-shadow: 2px 2px 4px 4px rgba(127, 127, 127, 0.25);
+}
+
+.inputfile:focus + label,
+.inputfile + label:hover {
+    box-shadow: 2px 2px 4px 4px rgba(127, 127, 127, 0.5);
+}
+img.sm {
+	max-width: 100px;
+	vertical-align: top;
+	border-radius: 4px;
+	margin-top:3pt;
+   	box-shadow: 1px 1px 3px 3px rgba(127, 127, 127, 0.15);
+}
+img.sm:hover {
+	border-color: blue;
+	}
+img.large {
+	max-height: 500px;
+	max-width: 650px;
+  	border-radius: 4px;
+    box-shadow: 1px 1px 3px 3px rgba(127, 127, 127, 0.15);
+}
+.imglabel {
+	vertical-align: top;
+	text-align: center;
+	font-size: 10pt;
+	padding-right: 0pt;
+}
+.overlay {
+	position:absolute;
+	z-index:2;
+	opacity:0;
+	top:0pt;
+	left:0pt;
+	-webkit-transition: all 1s ease;
+	-moz-transition: all 1s ease;
+	transition: all 1s ease;
+}
+.overlay:hover {
+	opacity: .7;
+}
+.rzslider .rz-pointer {
+  width: 8px;
+  height: 16px;
+  }
+.rzslider .rz-pointer:focus {
+  background-color: red;
+  }
+.rzslider .rz-pointer:after {
+  display: none;
+}
+.featurebd {
+	float:left;
+	border:1px solid gray;
+	margin-right:3pt;
+	margin-bottom:2pt;
+	padding:2pt 2pt;
+}
+.feature {
+	position:relative;
+	height:12pt;
+	margin-bottom: 1pt;
+	border:1pt solid darkgray;
+	background-color: #dbf1f9;
+}
+.feature .title {
+	position:absolute;
+	background-color: #dbf1f9;
+	margin-left:3pt;
+}
+.feature .bar {
+	position: absolute;
+	right:0pt;
+	padding-left: 5px;
+	padding-right: 3pt;
+	background-color: lightblue;
+}
+.feature .value {
+	position: absolute;
+	right: 3pt;
+	padding-left: 5px;
+}
+.buttonlike {
+	color: black;
+	border: 1pt solid gray;
+	padding:0pt 2pt 0pt 2pt;
+}
+</style>
+
+<title>SCIN - SkinCare Image Analysis</title>
+</head>
+
+<body ng-app="myApp" ng-controller="myCtrl"  ng-style="bodyStyle" >
+	
+<div style="margin: 10pt;" keyispressed ng-model="keyIsDown">
+
+	<div style="float:left;">
+	<h1>SCIN - SkinCare Image Analysis</h1>
+
+		<p>Model: {{modelInfo.binary_classification_model}}
+	</div>
+
+
+	<div style="margin-left:20pt; float:left;">
+		<button ng-show="!testWithSamples"  style="color:green"
+				ng-click="showSample();getImageList()[0].abcd.largeimage=  getImageList()[0].abcd.colors;"
+					title="show sample evaluation">show sample</button>
+		<button ng-show="testWithSamples" style="color:red; font-size:14pt;"
+				title="Reset before using own images"
+				ng-click="testWithSamples = false">RESET</button>
+
+		<button ng-if=false ng-click="showSample()" style="margin-left:20pt; " ng-show="!testWithSamples">show sample</button>
+
+		<button ng-click="showhelp = true" style="margin-left:20pt; " ng-show="!showhelp">Help</button>
+		<button ng-click="showhelp = false" style="margin-left:20pt; " ng-show="showhelp">Hide</button>
+	</div>
+	<div style="float:left; border:1pt solid blue; padding: 5pt; margin-left:20pt; color:blue; width:400pt;"
+		 ng-show="showhelp">
+		<span style="font-weight:bold">Classification</span><p>
+			After choosing an image the binary classification can be started by clicking the button
+			<span class="buttonlike" >Classify</span>.<p>
+			<span class="buttonlike" >DL Features</span> will compute and show a row of masks
+			computed through a UNET deep learning convolutional neural network.<p>
+			<span class="buttonlike" >ABCD Features</span> will start another module to compute the 'ABCD' features
+			for asymmetry, border, color and diameter.<p>
+			Large versions of images are shown when the mouse is moved over the thumbnails.
+			For most images the original image will be displayed in the background.
+			The opacity can be controlled alternatively by arrow keys after the slider is clicked (and turns red).
+			<p>
+			Use this <a href="/skincare/evaluate.html" style="color:darkblue;">page to evaluate</a>  the binary classifier.
+			<p>
+			By clicking on <span class="buttonlike" style="color:green">show sample</span>
+			 (top of page) you can see the full functionality applied to example images.
+			Before using own images please click <span class="buttonlike" style="color:red">RESET</span> first.
+			<p>For further information please visit the <a href="http://iml.dfki.de/" style="color:blue;">IML homepage</a>.<p>
+		<span style="color:black;">DFKI - German Research Center for Artificial Intelligence.</span>
+		<div ng-if="false">ABCD Rule:
+		<ul>
+			<li>Asymmetry (one half of the mole doesn't match the other),
+			<li>Border irregularity,
+			<li>Color that is not uniform,
+			<li>Diameter greater than 6 mm (about the size of a pencil eraser)
+		</ul></div>
+	</div>
+
+	<div style="clear:left; float: left; margin-right: 10pt; margin-bottom: 10pt;">
+			<table>
+				<tr>
+					<td style="vertical-align: top">
+						<div>
+							<table class="nobd list">
+								<tr >
+									<th style="width: 100pt">Image
+									<th style="text-align:left;">
+									  <table style="width:650pt;">
+									   <tr >
+									    <td style="text-align:left; width:100pt;">Classification
+										<td style="text-align:center; width:100%;">Features
+									   </table>
+
+								<tr class="list" ng-repeat="uploadedFile in getImageList() track by $index" style="vertical-align:top;"
+									ng-mouseleave="uploadedFile.abcd.largeimage=''">
+
+								    <td style="padding-top:10pt; padding-left:5pt;text-align:center;">
+										<img ng-mouseover="uploadedFile.abcd.largeimage=uploadedFile.url"
+											 xxng-mouseleave="uploadedFile.abcd.largeimage=''"
+											 title="original image"
+											 ng-src="{{uploadedFile.url}}" alt="image" class="sm"><p>
+										{{uploadedFile.name}}
+
+								    <td>
+							  		 <table class="inner" >
+									  <tr style="vertical-align:top; ">
+									   <td style="width:120pt;">
+										<button ng-click="tryGetImageFeatures(uploadedFile)" title="compute feature based on deep learning network">
+											DL Features</button>
+											<img style="height:16pt; vertical-align:bottom;" ng-show="uploadedFile.giffeaturesrunning"
+													 ng-src="{{uploadedFile.giffeaturesrunning}}"><br>
+										<button ng-click="classify(uploadedFile)" title="classify image"
+											xng-disabled="classifierRunning || ! myFiles || uploadedFile.predict">Classify</button><br>
+
+											<table style="width:110pt;" class="frame" ng-show="uploadedFile.predict">
+											<tr><td colspan="1">Prediction<td>
+												<img style="height:10pt; vertical-align:center;" ng-show="uploadedFile.class.gifcompute"
+													 ng-src="{{uploadedFile.class.gifcompute}}">
+											<tr><td><b>benign</b>:<td> {{uploadedFile.predict[0] | number: 2}}
+											<tr><td><b>malign</b>:<td> {{uploadedFile.predict[1] | number: 2}}
+											</table>
+									<td class="imglabel">Segmentation<br>
+										<img class="sm"  ng-src="{{uploadedFile.featureImages['segmentation']}}"
+											 ng-show="uploadedFile.featureImages['segmentation']"
+											 style="margin-top:3pt;"
+											ng-mouseenter="uploadedFile.abcd.largeimage= uploadedFile.featureImages['segmentation']"
+											ng-mouseleave="resetLargeImg(uploadedFile)"/>
+									<td class="imglabel" >Pigment Network<br>
+										<img class="sm"  ng-src="{{uploadedFile.featureImages['pigment_network']}}"
+											 ng-show="uploadedFile.featureImages['pigment_network']" style="margin-top:3pt;"
+											ng-mouseenter="uploadedFile.abcd.largeimage= uploadedFile.featureImages['pigment_network']"
+											ng-mouseleave="resetLargeImg(uploadedFile)"/>
+									<td class="imglabel">Globules<br>
+										<img class="sm" ng-src="{{uploadedFile.featureImages['globules']}}"
+											 ng-show="uploadedFile.featureImages['globules']" style="margin-top:3pt;"
+											ng-mouseenter="uploadedFile.abcd.largeimage= uploadedFile.featureImages['globules']"
+											ng-mouseleave="resetLargeImg(uploadedFile)"/>
+									<td class="imglabel">Streaks<br>
+										<img class="sm" ng-src="{{uploadedFile.featureImages['streaks']}}"
+											 ng-show="uploadedFile.featureImages['streaks']" style="margin-top:3pt;"
+											ng-mouseenter="uploadedFile.abcd.largeimage= uploadedFile.featureImages['streaks']"
+											ng-mouseleave="resetLargeImg(uploadedFile)"/>
+									<td class="imglabel" >Milia like cyst<br>
+										<img class="sm"  ng-src="{{uploadedFile.featureImages['milia_like_cyst']}}"
+											 ng-show="uploadedFile.featureImages['milia_like_cyst']" style="margin-top:3pt;"
+											ng-mouseenter="uploadedFile.abcd.largeimage= uploadedFile.featureImages['milia_like_cyst']"
+											ng-mouseleave="resetLargeImg(uploadedFile)"/>
+									<td class="imglabel" >Negative Network<br>
+										<img class="sm"  ng-src="{{uploadedFile.featureImages['negative_network']}}"
+											 ng-show="uploadedFile.featureImages['negative_network']" style="margin-top:3pt;"
+											ng-mouseenter="uploadedFile.abcd.largeimage= uploadedFile.featureImages['negative_network']"
+											ng-mouseleave="resetLargeImg(uploadedFile)"/>
+								<tr><td colspan="7" ng-show="uploadedFile.errormessage"	 >
+										 <div style="margin: 5pt; padding: 3pt; border:1pt solid black; color:red;"	>Error: {{uploadedFile.name}}: <br>{{uploadedFile.errormessage}}</div>
+								</table>
+
+
+							    <table class="inner" style="margin-top:3pt;" >
+							     <tr ><td  style="width:120pt;vertical-align:top" rowspan="2">
+									    <button ng-click="abcd(uploadedFile)" ng-disabled="uploadedFile.abcd.prediction"
+												title="compute features based on computer vision"
+												ng-disabled="! myFiles">ABCD Features</button>
+									 	  <img style="vertical-align:bottom; height:16pt;" ng-show="uploadedFile.abcd.gifcompute" ng-src="{{uploadedFile.abcd.gifcompute}}">
+
+									 	 <div style="margin-top:10pt; font-size:10pt; " ng-show="uploadedFile.abcd.predictvalues['B']">
+
+									 	  <div class="feature" style="margin-bottom:3pt;" xtitle="(perimeter ** 2) / (4 * pi * area)">
+											  <div class="title">Border</div>
+											  <div class="bar" ng-style="uploadedFile.abcd.borderStyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.borderPlus}} {{uploadedFile.abcd.borderVal | number:0}}</div>
+										  </div>
+
+										  <div class="feature" title="Diameters">
+											  <div class="title">Dia 1 </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.dia1StyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.dia1Plus}} {{uploadedFile.abcd.dia1Val | number:1}}</div>
+										  </div>
+										  <div class="feature"  title="Diameters" style="margin-bottom:3pt;" >
+											  <div class="title">Dia 2 </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.dia2StyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.dia2Plus}} {{uploadedFile.abcd.dia2Val | number:1}}</div>
+										  </div>
+
+										  <div class="feature" title="Asymmetry horizontal">
+											  <div class="title">Asym H </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.aSymHStyleW">&nbsp;</div>
+											  <div class="value">{{uploadedFile.abcd.asymHPlus}} {{uploadedFile.abcd.asymHVal | number:1}}</div>
+										  </div>
+										  <div class="feature" title="Asymmetry vertical">
+											  <div class="title">Asym V </div>
+											  <div class="bar" ng-style="uploadedFile.abcd.aSymVStyleW">&nbsp;</div>
+										      <div class="value">{{uploadedFile.abcd.asymVPlus}} {{uploadedFile.abcd.asymVVal | number:1}}</div>
+										  </div>
+										 </div>
+
+
+									 	<table ng-if=false
+											   class="frame" style="width:110pt;" ng-show="uploadedFile.abcd.predict!=undefined">
+											<tr><td>Prediction<img ng-show="uploadedFile.abcd.gifcompute" ng-src="{{uploadedFile.abcd.gifcompute}}">
+											<tr><td><b>{{uploadedFile.abcd.predict}}</b>
+										</table>
+
+
+										<td class="imglabel">Segmentation<br>
+									 		<img ng-mouseenter="uploadedFile.abcd.largeimage=  uploadedFile.abcd.segments;uploadedFile.abcd.mouseXY=''"
+											 ng-mouseleave="resetLargeImg(uploadedFile)" ng-show="uploadedFile.abcd.segments"
+											 ng-src="{{uploadedFile.abcd.segments}}" class="sm" xtitle="segmentation">
+
+									 	<td class="imglabel">Colors<br>
+									 		<img ng-mouseenter="uploadedFile.abcd.largeimage=  uploadedFile.abcd.colors;uploadedFile.abcd.mouseXY=''"
+											 ng-src="{{uploadedFile.abcd.colors}}" ng-show="uploadedFile.abcd.colors" class="sm" xtitle="colors">
+
+									    <td class="imglabel" xng-if="false">Border<br>
+									 		<img ng-mouseenter="uploadedFile.abcd.largeimage=  uploadedFile.abcd.border;uploadedFile.abcd.mouseXY=''"
+											 ng-mouseleave="resetLargeImg(uploadedFile)" ng-show="uploadedFile.abcd.border"
+											 ng-src="{{uploadedFile.abcd.border}}" class="sm" xtitle="border">
+
+
+										<td ng-if=false class="imglabel">Contours<br>
+									 		<img ng-mouseenter="uploadedFile.abcd.largeimage=  uploadedFile.abcd.mask;uploadedFile.abcd.mouseXY=''"
+											 ng-mouseleave="resetLargeImg(uploadedFile)" ng-show="uploadedFile.abcd.mask"
+											 ng-src="{{uploadedFile.abcd.mask}}" class="sm" xtitle="contour mask">
+
+										<td class="imglabel" title="Asymmetry horizontal (image flipped horizontally)">Asym H<br>
+									 		<img ng-mouseenter="uploadedFile.abcd.largeimage=  uploadedFile.abcd.asymhoriz;uploadedFile.abcd.mouseXY=''"
+											 ng-mouseleave="resetLargeImg(uploadedFile)" ng-show="uploadedFile.abcd.asymhoriz"
+											 ng-src="{{uploadedFile.abcd.asymhoriz}}" class="sm" xtitle="horizontal asymmetry">
+										<td class="imglabel" title="Asymmetry vertical (image flipped vertically)">Asym V<br>
+									 		<img ng-mouseenter="uploadedFile.abcd.largeimage=  uploadedFile.abcd.asymvert;uploadedFile.abcd.mouseXY=''"
+											 ng-mouseleave="resetLargeImg(uploadedFile)" ng-show="uploadedFile.abcd.asymvert"
+											 ng-src="{{uploadedFile.abcd.asymvert}}" class="sm"  xtitle="vertical asymmetry">
+
+								<tr><td colspan="5">
+									  <div ng-show="uploadedFile.abcd.predictvalues" style="margin-left:15pt; font-size:10pt;">
+										  <div class="featurebd" title="non zeros in mask">
+											  Area: {{uploadedFile.abcd.predictvalues['area']}}</div>
+										  <div class="featurebd" title="pixels in border">
+											  Perimeter: {{uploadedFile.abcd.predictvalues['perimeter']}}</div>
+									  </div>
+
+								</table>
+
+								<table style="width:650pt;" >
+							     <tr >
+								  <td  style="width:120pt;vertical-align:top">
+									  <div ng-show="uploadedFile.abcd.largeimage"  style="border: 1pt solid darkgray; padding:2pt;">
+									   <div ng-show="uploadedFile.abcd.largeimage" style="margin-top:5pt;">
+									    <input type="checkbox" id="hoverOn" ng-model="hoverOn" ng-change="toggleHoverOn()" />
+										<label for="hoverOn" style="font-size:10pt;">show original image in background</label>
+									   </div>
+									   <div ng-show="uploadedFile.abcd.largeimage " xx=" && showOverlay(uploadedFile)"
+											style="text-align:center; padding-top:10pt;font-size:10pt; ">
+										 <div ng-show="hoverOn">
+										   Opacity:
+										 <rzslider style="width:100pt;"
+												   rz-slider-model="opaSlider.value" rz-slider-options="opaSlider.options" ></rzslider>
+										 <b>Hint</b>: First click on the slider above (will turn red) to control the opacity with array keys.
+											 <br>Then move mouse over thumbnails.
+									 	 </div>
+										 </div>
+									  </div>
+
+									  <div ng-show="uploadedFile.abcd.largeimage && uploadedFile.abcd.largeimage==uploadedFile.abcd.colors"
+									  		style="margin-top:10pt;">
+									    <div style="float:left; font-size:10pt; padding-right:5pt; padding-top:3pt;"><b>Centroids</b></div><br>
+										<div ng-repeat="color in uploadedFile.abcd.centroids" ng-style="{'border-color': color.line}"
+											  style="font-size:10pt; float:left; padding-left:3pt; border:2px solid blue; margin-right:5pt; margin-bottom:2pt; padding:2pt 2pt;">
+											{{color.color}}: <em>{{color.val}}</em><br> {{color.centroids}} </div>
+										<div style="float:left; font-size:10pt; color: blue; margin-top:3pt; margin-left:10pt;"
+											 ng-show="uploadedFile.abcd.mouseXY">Position: {{uploadedFile.abcd.mouseXY}}</div>
+									  </div>
+								  <td>
+									<div  ng-show="uploadedFile.abcd.largeimage"
+										  style="clear:left; width:650px; position:relative" ng-style="largeimgStyle"
+									  	  ng-mouseenter="uploadedFile.abcd.overColorImg=true;"
+										  ng-mouseleave="uploadedFile.abcd.overColorImg=false;">
+										  <img ng-src="{{uploadedFile.abcd.largeimage}}" class="large"
+											   style="z-index:1"
+												ng-mousemove="mouseOverImage1($event, uploadedFile);
+															  largeimgStyle={'cursor':'crosshair'}"
+										   		>
+										<img ng-show="showOverlay(uploadedFile)"
+											 ng-src="{{uploadedFile.url}}" class="large"
+											 ng-style="hoverStyle"
+											 style="position:absolute; z-index:2; opacity:0.8; top:0pt; left:0pt; -webkit-transition: all 1s ease; -moz-transition: all 1s ease; transition: all 1s ease;">
+
+									 <button ng-show="uploadedFile.abcd.largeimage"
+											 style="position:absolute; top: 5pt; right: 5pt; z-index: 3; xvertical-align:top; xmargin-top: 10pt;"
+											 ng-click="uploadedFile.abcd.largeimage=''">close</button>
+									</div>
+								 </table>
+
+							<tr class="list"  style="xborder-top:1pt solid black; xborder-bottom:1pt solid black;"
+								title="Click to load image(s) from your file system or Drag&Drop image(s) to this field">
+								<td style="padding:20pt 0pt 20pt 5pt;"  colspan="3">
+								<input type="file" class="inputfile" id="imginput" accept="image/*" ng-file-model="myFiles" multiple/>
+								<label for="imginput" xtitle="choose or drag&drop image file(s)"
+								   upload  ng-file-model="myFiles" multiple="true">click to choose image(s) or drop image file(s) here
+								</label>
+
+						</table>
+					  </div>
+
+
+				<tr><td style="padding-top:100pt;">Example Images<p>
+					<img src="http://dfki.de/IML/images/BenchmarkDermoscopic/benign/ISIC_0000003.JPG" width="100pt">
+					<img src="http://dfki.de/IML/images/BenchmarkDermoscopic/benign/ISIC_0000037.JPG" width="100pt">
+					<img src="http://dfki.de/IML/images/BenchmarkDermoscopic/benign/ISIC_0000328.JPG" width="100pt">
+					<img src="http://dfki.de/IML/images/BenchmarkDermoscopic/benign/ISIC_0000117.JPG" width="100pt">
+
+					<p>
+					(Drag&Drop does not work on all systems/browsers, alternatively save locally to use)
+			</table>
+
+		</div>
+
+
+
+ </div>
+
+</body>
+</html>
