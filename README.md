@@ -94,3 +94,26 @@ For example:
 
 * `http://127.0.0.1:5000/classify.html` load an interactive page for exploring classification results.
 
+## Publications
+
+To cite this work, please use the following BibTex entry (from https://dl.acm.org/doi/10.1145/3459926.3464753)
+
+```
+@inproceedings{10.1145/3459926.3464753,
+author = {Nunnari, Fabrizio and Sonntag, Daniel},
+title = {A Software Toolbox for Deploying Deep Learning Decision Support Systems with XAI Capabilities},
+year = {2021},
+isbn = {9781450384490},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3459926.3464753},
+doi = {10.1145/3459926.3464753},
+abstract = {We describe the software architecture of a toolbox of reusable components for the configuration of convolutional neural networks (CNNs) for classification and labeling problems. The toolbox architecture has been designed to maximize the reuse of established algorithms and to include domain experts in the development and evaluation process across different projects and challenges. In addition, we implemented easy-to-edit input formats and modules for XAI (eXplainable AI) through visual inspection capabilities. The toolbox is available for the research community to implement applied artificial intelligence projects.},
+booktitle = {Companion of the 2021 ACM SIGCHI Symposium on Engineering Interactive Computing Systems},
+pages = {44–49},
+numpages = {6},
+keywords = {design patterns, explainable AI., object-oriented architecture, convolutional neural networks, Software toolbox, deep learning},
+location = {Virtual Event, Netherlands},
+series = {EICS '21}
+}
+```
